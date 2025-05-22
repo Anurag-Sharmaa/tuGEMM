@@ -1,0 +1,1592 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 26.09.2024 07:20:03
+// Design Name: 
+// Module Name: tuGEMM_4
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+//  no extra adders////
+
+
+
+
+
+//module tuGEMM_4(
+//input clk,
+//input rst,
+//input [127:0] vector_a,
+//input [127:0] vector_b,
+//output wire signed [16:0] Row_00,
+//output wire signed [16:0] Row_01,
+//output wire signed [16:0] Row_02,
+//output wire signed [16:0] Row_03,
+//output wire signed [16:0] Row_10,
+//output wire signed [16:0] Row_11,
+//output wire signed [16:0] Row_12,
+//output wire signed [16:0] Row_13,
+//output wire signed [16:0] Row_20,
+//output wire signed [16:0] Row_21,
+//output wire signed [16:0] Row_22,
+//output wire signed [16:0] Row_23,
+//output wire signed [16:0] Row_30,
+//output wire signed [16:0] Row_31,
+//output wire signed [16:0] Row_32,
+//output wire signed [16:0] Row_33
+//    );
+//integer i,j;
+//integer k,l;
+//// reg [7:0] store_A[15:0];
+//// reg [7:0] store_B [15:0];
+
+//    reg signed unary_col ;
+//   reg signed unary_row ;
+//   reg signed neg_row;
+//   reg signed neg_col ;
+//   wire signed xor_out ;
+//   wire signed and_out;
+//    reg signed [7:0] counta, countb;   // 8-bit counters
+//    reg [4:0] index_a;            // Index for vector selection
+//    reg [4:0] index_b;
+//    reg [3:0] done_A;
+//    reg [3:0] done_B;
+//    reg [2:0] state;            // State variable
+//     reg done;
+//     reg signed [16:0] C00 [0:15];
+//     reg signed [16:0] counter;
+//    localparam IDLE     = 3'b00,  // IDLE state
+//               LOAD     = 3'b01,  // Load state for vector values
+//               COUNT_A  = 3'b10,  // Decrement/Increment counta state
+//               COUNT_B  = 3'b11,  // Decrement/Increment countb state
+//               CHANGE   = 3'b100;
+
+//    // State machine
+//    always @(posedge clk) begin
+//        if (rst) begin
+//            counta <= 8'd0;
+//            countb <= 8'd0;
+//            index_a <= 5'd0;
+//            index_b <= 5'd0;
+//            done_A <= 0;
+//            done_B <= 0;
+//            state <= IDLE;
+//            done <= 1'b0;
+//            counter <= 0;
+//            unary_col <= 0;
+//            unary_row <= 0;
+//            neg_row <= 0;
+//            neg_col <= 0;
+            
+//            j <= 0;
+//        end else begin
+//            case (state)
+//                IDLE: begin
+//                    // Wait in idle, start processing when index is within bounds
+//                    if (index_a < 5'd16) begin
+//                        state <= LOAD;
+//                    end else begin
+//                        done <= 1'b1;  // Done when all vectors processed
+//                    end
+//                end
+
+//                LOAD: begin
+//                    // Load the nth value from vector_a and vector_b into counta and countb
+//                    counta <= vector_a[index_a*8+:8];
+//                    countb <= vector_b[index_b*8+:8];
+                    
+//                    state <= COUNT_A;  // Start with counta
+//                end
+
+//                COUNT_A: begin
+//                if (counta == 0) begin
+//                        done_A <= done_A + 1;
+//                        C00[j] <= counter;
+//                        done_B <= done_B + 1;
+//                        state <= CHANGE;
+//                    end
+//                    // First, decrement or increment counta
+//                   else if (counta > 0) begin
+//                        counta <= counta - 1;
+//                        state <= COUNT_B;
+//                    end else if (counta < 0) begin
+//                        counta <= counta + 1;
+//                        state <= COUNT_B;
+//                    end
+
+//                    if (counta > 0) begin
+//                      unary_col <= 1;
+//                      neg_col <= 0; end
+//                  else if  (counta < 0) begin
+//                       unary_col <= 0;
+//                       neg_col <= 1; end
+//                 if (countb > 0)   begin 
+//                      unary_row <= 1;
+//                      neg_row <= 0; end
+//                 else if (countb < 0) begin
+//                    unary_row <= 0;
+//                    neg_row <= 1; end
+//                    // After one decrement/increment of counta, go to countb state
+                    
+//                end
+
+//                 COUNT_B: begin
+//                // Now decrement or increment countb until it reaches 0
+//                if (countb > 0) begin
+//                    countb <= countb - 1;
+//                    if (xor_out == 0) begin
+             
+//                counter <= counter + 1; end 
+             
+//             else if (xor_out == 1) begin
+             
+//                counter <= counter - 1; end
+//                end else if (countb < 0) begin
+//                    countb <= countb + 1;
+//                    if (xor_out == 0) begin
+             
+//                counter <= counter + 1; end 
+             
+//             else if (xor_out == 1) begin
+             
+//                counter <= counter - 1; end
+//                end else begin
+//                    // When countb reaches 0, go back to counta if counta > 0
+//                    if (counta != 0) begin
+//                        state <= COUNT_A;  // Continue with counta
+//                        countb <= vector_b[index_b*8+:8];
+//                    end else if (counta == 0) begin
+//                        done_A <= done_A + 1;
+//                        C00[j] <= counter;
+//                        done_B <= done_B + 1;
+//                        state <= CHANGE;
+//                    end
+//                end
+//            end
+
+//            CHANGE: begin
+//                j = j+1;
+//                counter <= 0;
+                
+//                // Both counta and countb are 0, load next values
+//                case (done_A)
+//                    0: index_a <= 4'd0;
+//                    1: index_a <= 4'd0;
+//                    2: index_a <= 4'd0;
+//                    3: index_a <= 4'd0;
+//                    4: index_a <= 4'd4;
+//                    5: index_a <= 4'd4;
+//                    6: index_a <= 4'd4;
+//                    7: index_a <= 4'd4;
+//                    8: index_a <= 4'd8;
+//                    9: index_a <= 4'd8;
+//                    10: index_a <= 4'd8;
+//                    11: index_a <= 4'd8;
+//                    12: index_a <= 4'd12;
+//                    13: index_a <= 4'd12;
+//                    14: index_a <= 4'd12;
+//                    15: index_a <= 4'd12;
+//                endcase
+
+//                case (done_B)
+//                    0: index_b <= 4'd0;
+//                    1: index_b <= 4'd1;
+//                    2: index_b <= 4'd2;
+//                    3: index_b <= 4'd3;
+//                    4: index_b <= 4'd0;
+//                    5: index_b <= 4'd1;
+//                    6: index_b <= 4'd2;
+//                    7: index_b <= 4'd3;
+//                    8: index_b <= 4'd0;
+//                    9: index_b <= 4'd1;
+//                    10: index_b <= 4'd2;
+//                    11: index_b <= 4'd3;
+//                    12: index_b <= 4'd0;
+//                    13: index_b <= 4'd1;
+//                    14: index_b <= 4'd2;
+//                    15: index_b <= 4'd3;
+//                endcase
+
+//                state <= LOAD;  // Load next vector values
+//            end
+
+//        endcase
+//    end
+//end
+
+//            assign xor_out = neg_col ^ neg_row;
+//            assign and_out = unary_col && unary_row;
+
+///// second state machine
+//    reg signed unary_col_1 ;
+//    reg signed unary_row_1 ;
+//    reg signed neg_row_1;
+//    reg signed neg_col_1 ;
+//    wire signed xor_out_1 ;
+//    wire signed and_out_1 ;
+//    reg signed [7:0] counta_1, countb_1;   // 8-bit counters
+//    reg [4:0] index_a_1;            // Index for vector selection
+//    reg [4:0] index_b_1;
+//    reg [3:0] done_A_1;
+//    reg [3:0] done_B_1;
+//    reg [2:0] state_1;            // State variable
+//     reg done_1;
+////     reg signed [16:0] C00_1 [0:15];
+//     reg signed [16:0] counter_1;
+//    localparam IDLE_1     = 3'b00,  // IDLE state
+//               LOAD_1     = 3'b01,  // Load state for vector values
+//               COUNT_A_1  = 3'b10,  // Decrement/Increment counta state
+//               COUNT_B_1  = 3'b11,  // Decrement/Increment countb state
+//               CHANGE_1   = 3'b100;
+
+
+
+//always @(posedge clk) begin
+//        if (rst) begin
+//            counta_1 <= 8'd0;
+//            countb_1 <= 8'd0;
+//            index_a_1 <= 5'd1;
+//            index_b_1 <= 5'd4;
+//            done_A_1 <= 0;
+//            done_B_1 <= 0;
+//            counter_1 <= 0;
+//            unary_col_1 <= 0;
+//            unary_row_1 <= 0;
+//            neg_row_1 <= 0;
+//            neg_col_1 <= 0;
+            
+//            i <= 0;
+//            state_1 <= IDLE_1;
+//            //done_1 <= 1'b0;
+//        end else begin
+//            case (state_1)
+//                IDLE_1: begin
+//                    // Wait in idle, start processing when index is within bounds
+//                    if (index_a_1 < 5'd16) begin
+//                        state_1 <= LOAD_1;
+//                    end else begin
+//                       // done_1 <= 1'b1;  // Done when all vectors processed
+//                    end
+//                end
+
+//                LOAD_1: begin
+//                    // Load the nth value from vector_a and vector_b into counta and countb
+//                    counta_1 <= vector_a[index_a_1*8+:8];
+//                    countb_1 <= vector_b[index_b_1*8+:8];
+//                    state_1 <= COUNT_A_1;  // Start with counta
+//                end
+
+//                COUNT_A_1: begin
+//                if (counta_1 == 0) begin
+//                        done_A_1 <= done_A_1 + 1;
+//                        C00[i] <= C00[i] + counter_1;
+//                        done_B_1 <= done_B_1 + 1;
+//                        state_1 <= CHANGE_1;
+//                    end
+//// First, decrement or increment counta
+//                   else if (counta_1 > 0) begin
+//                        counta_1 <= counta_1 - 1;
+//                          state_1 <= COUNT_B_1;
+//                    end else if (counta_1 < 0) begin
+//                        counta_1 <= counta_1 + 1;
+//                          state_1 <= COUNT_B_1;
+//                    end
+
+//                    if (counta_1 > 0) begin
+//                      unary_col_1 <= 1;
+//                      neg_col_1 <= 0; end
+//                  else if  (counta_1 < 0) begin
+//                       unary_col_1 <= 0;
+//                       neg_col_1 <= 1; end
+//                 if (countb_1 > 0)   begin 
+//                      unary_row_1 <= 1;
+//                      neg_row_1 <= 0; end
+//                 else if (countb_1 < 0) begin
+//                    unary_row_1 <= 0;
+//                    neg_row_1 <= 1; end
+                    
+//                    // After one decrement/increment of counta, go to countb state
+                  
+//                end
+
+//                 COUNT_B_1: begin
+//                // Now decrement or increment countb until it reaches 0
+//                if (countb_1 > 0) begin
+//                    countb_1 <= countb_1 - 1;
+//                    if (xor_out_1 == 0) begin
+             
+//                counter_1 <= counter_1 + 1; end 
+             
+//             else if (xor_out_1 == 1) begin
+             
+//                counter_1 <= counter_1 - 1; end
+//                end else if (countb_1 < 0) begin
+//                    countb_1 <= countb_1 + 1;
+//                    if (xor_out_1 == 0) begin
+             
+//                counter_1 <= counter_1 + 1; end 
+             
+//             else if (xor_out_1 == 1) begin
+             
+//                counter_1 <= counter_1 - 1; end
+//                end else begin
+//                    // When countb reaches 0, go back to counta if counta > 0
+//                    if (counta_1 != 0) begin
+//                        state_1 <= COUNT_A_1;  // Continue with counta
+//                        countb_1 <= vector_b[index_b_1*8+:8];
+//                    end else if (counta_1 == 0) begin
+//                        done_A_1 <= done_A_1 + 1;
+//                        C00[i] <= C00[i] + counter_1;
+//                        done_B_1 <= done_B_1 + 1;
+//                        state_1 <= CHANGE_1;
+//                    end
+//                end
+//            end
+
+//            CHANGE_1: begin
+            
+//                i = i+1;
+//                counter_1 <= 0;
+//                // Both counta and countb are 0, load next values
+//                case (done_A_1)
+//                    0: index_a_1 <= 4'd0;
+//                    1: index_a_1 <= 4'd1;
+//                    2: index_a_1 <= 4'd1;
+//                    3: index_a_1 <= 4'd1;
+//                    4: index_a_1 <= 4'd5;
+//                    5: index_a_1 <= 4'd5;
+//                    6: index_a_1 <= 4'd5;
+//                    7: index_a_1 <= 4'd5;
+//                    8: index_a_1 <= 4'd9;
+//                    9: index_a_1 <= 4'd9;
+//                    10: index_a_1 <= 4'd9;
+//                    11: index_a_1 <= 4'd9;
+//                    12: index_a_1 <= 4'd13;
+//                    13: index_a_1 <= 4'd13;
+//                    14: index_a_1 <= 4'd13;
+//                    15: index_a_1 <= 4'd13;
+//                endcase
+
+//                case (done_B_1)
+//                    0: index_b_1 <= 4'd0;
+//                    1: index_b_1 <= 4'd5;
+//                    2: index_b_1 <= 4'd6;
+//                    3: index_b_1 <= 4'd7;
+//                    4: index_b_1 <= 4'd4;
+//                    5: index_b_1 <= 4'd5;
+//                    6: index_b_1 <= 4'd6;
+//                    7: index_b_1 <= 4'd7;
+//                    8: index_b_1 <= 4'd4;
+//                    9: index_b_1 <= 4'd5;
+//                    10: index_b_1 <= 4'd6;
+//                    11: index_b_1 <= 4'd7;
+//                    12: index_b_1 <= 4'd4;
+//                    13: index_b_1 <= 4'd5;
+//                    14: index_b_1 <= 4'd6;
+//                    15: index_b_1 <= 4'd7;
+//                endcase
+
+//                state_1 <= LOAD_1;  // Load next vector values
+//            end
+
+//        endcase
+//    end
+//end
+
+
+//            assign xor_out_1 = neg_col_1 ^ neg_row_1;
+//            assign and_out_1 = unary_col_1 && unary_row_1;
+
+///// third state machine
+//    reg signed unary_col_2 ;
+//    reg signed unary_row_2 ;
+//    reg signed neg_row_2;
+//    reg signed neg_col_2 ;
+//    wire signed xor_out_2 ;
+//    wire signed and_out_2 ;
+//    reg signed [7:0] counta_2, countb_2;   // 8-bit counters
+//    reg [4:0] index_a_2;            // Index for vector selection
+//    reg [4:0] index_b_2;
+//    reg [3:0] done_A_2;
+//    reg [3:0] done_B_2;
+//    reg [2:0] state_2;            // State variable
+//  //   reg done_1;
+////     reg signed [16:0] C00_2 [0:15];
+//     reg signed [16:0] counter_2;
+//    localparam IDLE_2     = 3'b00,  // IDLE state
+//               LOAD_2     = 3'b01,  // Load state for vector values
+//               COUNT_A_2  = 3'b10,  // Decrement/Increment counta state
+//               COUNT_B_2  = 3'b11,  // Decrement/Increment countb state
+//               CHANGE_2   = 3'b100;
+
+
+
+//always @(posedge clk) begin
+//        if (rst) begin
+//            counta_2 <= 8'd0;
+//            countb_2 <= 8'd0;
+//            index_a_2 <= 5'd2;
+//            index_b_2 <= 5'd8;
+//            done_A_2 <= 0;
+//            done_B_2 <= 0;
+//            counter_2 <= 0;
+//            unary_col_2 <= 0;
+//            unary_row_2 <= 0;
+//            neg_row_2 <= 0;
+//            neg_col_2 <= 0;
+            
+//            k <= 0;
+//            state_2 <= IDLE_2;
+//            //done_1 <= 1'b0;
+//        end else begin
+//            case (state_2)
+//                IDLE_2: begin
+//                    // Wait in idle, start processing when index is within bounds
+//                    if (index_a_2 < 5'd16) begin
+//                        state_2 <= LOAD_2;
+//                    end else begin
+//                       // done_1 <= 1'b1;  // Done when all vectors processed
+//                    end
+//                end
+
+//                LOAD_2: begin
+//                    // Load the nth value from vector_a and vector_b into counta and countb
+//                    counta_2 <= vector_a[index_a_2*8+:8];
+//                    countb_2 <= vector_b[index_b_2*8+:8];
+//                    state_2 <= COUNT_A_2;  // Start with counta
+//                end
+
+//                COUNT_A_2: begin
+                
+//                if (counta_2 == 0) begin
+//                        done_A_2 <= done_A_2 + 1;
+//                         C00[k] <= C00[k] + counter_2;
+//                        done_B_2 <= done_B_2 + 1;
+//                        state_2 <= CHANGE_2;
+//                    end
+//                    // First, decrement or increment counta
+//                   else if (counta_2 > 0) begin
+//                        counta_2 <= counta_2 - 1;
+//                        state_2 <= COUNT_B_2;
+//                    end else if (counta_2 < 0) begin
+//                        counta_2 <= counta_2 + 1;
+//                        state_2 <= COUNT_B_2;
+//                    end
+
+//                    if (counta_2 > 0) begin
+//                      unary_col_2 <= 1;
+//                      neg_col_2 <= 0; end
+//                  else if  (counta_2 < 0) begin
+//                       unary_col_2 <= 0;
+//                       neg_col_2 <= 1; end
+//                 if (countb_2 > 0)   begin 
+//                      unary_row_2 <= 1;
+//                      neg_row_2 <= 0; end
+//                 else if (countb_2 < 0) begin
+//                    unary_row_2 <= 0;
+//                    neg_row_2 <= 1; end
+
+//                    // After one decrement/increment of counta, go to countb state
+                    
+//                end
+
+//                 COUNT_B_2: begin
+//                // Now decrement or increment countb until it reaches 0
+//                if (countb_2 > 0) begin
+//                    countb_2 <= countb_2 - 1;
+//                     if (xor_out_2 == 0) begin
+             
+//                counter_2 <= counter_2 + 1; end 
+             
+//             else if (xor_out_2 == 1) begin
+             
+//                counter_2 <= counter_2 - 1; end
+                
+//                end else if (countb_2 < 0) begin
+//                    countb_2 <= countb_2 + 1;
+//                     if (xor_out_2 == 0) begin
+             
+//                counter_2 <= counter_2 + 1; end 
+             
+//             else if (xor_out_2 == 1) begin
+             
+//                counter_2 <= counter_2 - 1; end
+//                end else begin
+//                    // When countb reaches 0, go back to counta if counta > 0
+//                    if (counta_2 != 0) begin
+//                        state_2 <= COUNT_A_2;  // Continue with counta
+//                        countb_2 <= vector_b[index_b_2*8+:8];
+//                    end else if (counta_2 == 0) begin
+//                        done_A_2 <= done_A_2 + 1;
+//                         C00[k] <= C00[k] + counter_2;
+//                        done_B_2 <= done_B_2 + 1;
+//                        state_2 <= CHANGE_2;
+//                    end
+//                end
+//            end
+
+//            CHANGE_2: begin
+            
+//                k = k+1;
+//                counter_2 <= 0;
+//                // Both counta and countb are 0, load next values
+//                case (done_A_2)
+//                    0: index_a_2 <= 4'd0;
+//                    1: index_a_2 <= 4'd2;
+//                    2: index_a_2 <= 4'd2;
+//                    3: index_a_2 <= 4'd2;
+//                    4: index_a_2 <= 4'd6;
+//                    5: index_a_2 <= 4'd6;
+//                    6: index_a_2 <= 4'd6;
+//                    7: index_a_2 <= 4'd6;
+//                    8: index_a_2 <= 4'd10;
+//                    9: index_a_2 <= 4'd10;
+//                    10: index_a_2 <= 4'd10;
+//                    11: index_a_2 <= 4'd10;
+//                    12: index_a_2 <= 4'd14;
+//                    13: index_a_2 <= 4'd14;
+//                    14: index_a_2 <= 4'd14;
+//                    15: index_a_2 <= 4'd14;
+//                endcase
+
+//                case (done_B_2)
+//                    0: index_b_2 <= 4'd0;
+//                    1: index_b_2 <= 4'd9;
+//                    2: index_b_2 <= 4'd10;
+//                    3: index_b_2 <= 4'd11;
+//                    4: index_b_2 <= 4'd8;
+//                    5: index_b_2 <= 4'd9;
+//                    6: index_b_2 <= 4'd10;
+//                    7: index_b_2 <= 4'd11;
+//                    8: index_b_2 <= 4'd8;
+//                    9: index_b_2 <= 4'd9;
+//                    10: index_b_2 <= 4'd10;
+//                    11: index_b_2 <= 4'd11;
+//                    12: index_b_2 <= 4'd8;
+//                    13: index_b_2 <= 4'd9;
+//                    14: index_b_2 <= 4'd10;
+//                    15: index_b_2 <= 4'd11;
+//                endcase
+
+//                state_2 <= LOAD_2;  // Load next vector values
+//            end
+
+//        endcase
+//    end
+//end
+
+//            assign xor_out_2 = neg_col_2 ^ neg_row_2;
+//            assign and_out_2 = unary_col_2 && unary_row_2;
+
+
+///// FOURTH state machine
+//    reg signed unary_col_3 ;
+//    reg signed unary_row_3 ;
+//    reg signed neg_row_3;
+//    reg signed neg_col_3 ;
+//    wire signed xor_out_3 ;
+//    wire signed and_out_3 ;
+//    reg signed [7:0] counta_3, countb_3;   // 8-bit counters
+//    reg [4:0] index_a_3;            // Index for vector selection
+//    reg [4:0] index_b_3;
+//    reg [3:0] done_A_3;
+//    reg [3:0] done_B_3;
+//    reg [2:0] state_3;            // State variable
+//  //   reg done_1;
+////     reg signed [16:0] C00_3 [0:15];
+//     reg signed [16:0] counter_3;
+//    localparam IDLE_3     = 3'b00,  // IDLE state
+//               LOAD_3     = 3'b01,  // Load state for vector values
+//               COUNT_A_3  = 3'b10,  // Decrement/Increment counta state
+//               COUNT_B_3  = 3'b11,  // Decrement/Increment countb state
+//               CHANGE_3   = 3'b100;
+
+
+
+//always @(posedge clk) begin
+//        if (rst) begin
+//            counta_3 <= 8'd0;
+//            countb_3 <= 8'd0;
+//            index_a_3 <= 5'd3;
+//            index_b_3 <= 5'd12;
+//            done_A_3 <= 0;
+//            done_B_3 <= 0;
+//            counter_3 <= 0;
+//            unary_col_3 <= 0;
+//            unary_row_3 <= 0;
+//            neg_row_3 <= 0;
+//            neg_col_3 <= 0;
+            
+//            l <= 0;
+//            state_3 <= IDLE_3;
+//            //done_1 <= 1'b0;
+//        end else begin
+//            case (state_3)
+//                IDLE_3: begin
+//                    // Wait in idle, start processing when index is within bounds
+//                    if (index_a_3 < 5'd16) begin
+//                        state_3 <= LOAD_3;
+//                    end else begin
+//                       // done_1 <= 1'b1;  // Done when all vectors processed
+//                    end
+//                end
+
+//                LOAD_3: begin
+//                    // Load the nth value from vector_a and vector_b into counta and countb
+//                    counta_3 <= vector_a[index_a_3*8+:8];
+//                    countb_3 <= vector_b[index_b_3*8+:8];
+                    
+                
+//                    state_3 <= COUNT_A_3;  // Start with counta
+//                end
+
+//                COUNT_A_3: begin
+                
+//                if (counta_3 == 0) begin
+//                        done_A_3 <= done_A_3 + 1;
+//                         C00[l] <= C00[l] + counter_3;
+//                        done_B_3 <= done_B_3 + 1;
+//                        state_3 <= CHANGE_3;
+//                    end
+//                    // First, decrement or increment counta
+//                   else if (counta_3 > 0) begin
+//                        counta_3 <= counta_3 - 1;
+//                        state_3 <= COUNT_B_3;
+//                    end else if (counta_3 < 0) begin
+//                        counta_3 <= counta_3 + 1;
+//                        state_3 <= COUNT_B_3;
+//                    end
+
+//                    if (counta_3 > 0) begin
+//                      unary_col_3 <= 1;
+//                      neg_col_3 <= 0; end
+//                  else if  (counta_3 < 0) begin
+//                       unary_col_3 <= 0;
+//                       neg_col_3 <= 1; end
+//                 if (countb_3 > 0)   begin 
+//                      unary_row_3 <= 1;
+//                      neg_row_3 <= 0; end
+//                 else if (countb_3 < 0) begin
+//                    unary_row_3 <= 0;
+//                    neg_row_3 <= 1; end
+
+//                    // After one decrement/increment of counta, go to countb state
+                   
+//                end
+
+//                 COUNT_B_3: begin
+//                // Now decrement or increment countb until it reaches 0
+//                if (countb_3 > 0) begin
+//                    countb_3 <= countb_3 - 1;
+//                    if (xor_out_3 == 0) begin
+             
+//                counter_3 <= counter_3 + 1; end 
+             
+//             else if (xor_out_3 == 1) begin
+             
+//                counter_3 <= counter_3 - 1; end
+//                end else if (countb_3 < 0) begin
+//                    countb_3 <= countb_3 + 1;
+//                    if (xor_out_3 == 0) begin
+             
+//                counter_3 <= counter_3 + 1; end 
+             
+//             else if (xor_out_3 == 1) begin
+             
+//                counter_3 <= counter_3 - 1; end
+//                end else begin
+//                    // When countb reaches 0, go back to counta if counta > 0
+//                    if (counta_3 != 0) begin
+//                        state_3 <= COUNT_A_3;  // Continue with counta
+//                        countb_3 <= vector_b[index_b_3*8+:8];
+//                    end else if (counta_3 == 0) begin
+//                        done_A_3 <= done_A_3 + 1;
+//                         C00[l] <= C00[l] + counter_3;
+//                        done_B_3 <= done_B_3 + 1;
+//                        state_3 <= CHANGE_3;
+//                    end
+//                end
+//            end
+
+//            CHANGE_3: begin
+            
+//                l = l+1;
+//                counter_3 <= 0;
+//                // Both counta and countb are 0, load next values
+//                case (done_A_3)
+//                    0: index_a_3 <= 4'd0;
+//                    1: index_a_3 <= 4'd3;
+//                    2: index_a_3 <= 4'd3;
+//                    3: index_a_3 <= 4'd3;
+//                    4: index_a_3 <= 4'd7;
+//                    5: index_a_3 <= 4'd7;
+//                    6: index_a_3 <= 4'd7;
+//                    7: index_a_3 <= 4'd7;
+//                    8: index_a_3 <= 4'd11;
+//                    9: index_a_3 <= 4'd11;
+//                    10: index_a_3 <= 4'd11;
+//                    11: index_a_3 <= 4'd11;
+//                    12: index_a_3 <= 4'd15;
+//                    13: index_a_3 <= 4'd15;
+//                    14: index_a_3 <= 4'd15;
+//                    15: index_a_3 <= 4'd15;
+//                endcase
+
+//                case (done_B_3)
+//                    0: index_b_3 <= 4'd0;
+//                    1: index_b_3 <= 4'd13;
+//                    2: index_b_3 <= 4'd14;
+//                    3: index_b_3 <= 4'd15;
+//                    4: index_b_3 <= 4'd12;
+//                    5: index_b_3 <= 4'd13;
+//                    6: index_b_3 <= 4'd14;
+//                    7: index_b_3 <= 4'd15;
+//                    8: index_b_3 <= 4'd12;
+//                    9: index_b_3 <= 4'd13;
+//                    10: index_b_3 <= 4'd14;
+//                    11: index_b_3 <= 4'd15;
+//                    12: index_b_3 <= 4'd12;
+//                    13: index_b_3 <= 4'd13;
+//                    14: index_b_3 <= 4'd14;
+//                    15: index_b_3 <= 4'd15;
+//                endcase
+
+//                state_3 <= LOAD_3;  // Load next vector values
+//            end
+
+//        endcase
+//    end
+//end
+
+
+//            assign xor_out_3 = neg_col_3 ^ neg_row_3;
+//            assign and_out_3 = unary_col_3 && unary_row_3;
+            
+
+
+
+
+//assign Row_00 = C00[0];
+//assign Row_01 = C00[1];
+//assign Row_02 = C00[2];
+//assign Row_03 = C00[3];
+//assign Row_10 = C00[4];
+//assign Row_11 = C00[5];
+//assign Row_12 = C00[6];
+//assign Row_13 = C00[7];
+//assign Row_20 = C00[8];
+//assign Row_21 = C00[9];
+//assign Row_22 = C00[10];
+//assign Row_23 = C00[11];
+//assign Row_30 = C00[12];
+//assign Row_31 = C00[13];
+//assign Row_32 = C00[14];
+//assign Row_33 = C00[15];
+
+
+
+//endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// earlier max adders////
+
+
+module tuGEMM_4(
+input clk,
+input rst,
+input [127:0] vector_a,
+input [127:0] vector_b,
+output reg signed [7:0] Row_00,
+output reg signed [7:0] Row_01,
+output reg signed [7:0] Row_02,
+output reg signed [7:0] Row_03,
+output reg signed [7:0] Row_10,
+output reg signed [7:0] Row_11,
+output reg signed [7:0] Row_12,
+output reg signed [7:0] Row_13,
+output reg signed [7:0] Row_20,
+output reg signed [7:0] Row_21,
+output reg signed [7:0] Row_22,
+output reg signed [7:0] Row_23,
+output reg signed [7:0] Row_30,
+output reg signed [7:0] Row_31,
+output reg signed [7:0] Row_32,
+output reg signed [7:0] Row_33
+    );
+integer i,j;
+integer k,l;
+// reg [7:0] store_A[15:0];
+// reg [7:0] store_B [15:0];
+
+    reg signed unary_col ;
+   reg signed unary_row ;
+   reg signed neg_row;
+   reg signed neg_col ;
+   wire signed xor_out ;
+   wire signed and_out;
+    reg signed [7:0] counta, countb;   // 8-bit counters
+    reg [4:0] index_a;            // Index for vector selection
+    reg [4:0] index_b;
+    reg [3:0] done_A;
+    reg [3:0] done_B;
+    reg [2:0] state;            // State variable
+     reg done;
+     reg signed [7:0] C00 [0:15];
+     reg signed [7:0] counter;
+    localparam IDLE     = 3'b00,  // IDLE state
+               LOAD     = 3'b01,  // Load state for vector values
+               COUNT_A  = 3'b10,  // Decrement/Increment counta state
+               COUNT_B  = 3'b11,  // Decrement/Increment countb state
+               CHANGE   = 3'b100;
+
+    // State machine
+    always @(posedge clk) begin
+        if (rst) begin
+            counta <= 8'd0;
+            countb <= 8'd0;
+            index_a <= 5'd0;
+            index_b <= 5'd0;
+            done_A <= 0;
+            done_B <= 0;
+            state <= IDLE;
+            done <= 1'b0;
+            counter <= 0;
+            unary_col <= 0;
+            unary_row <= 0;
+            neg_row <= 0;
+            neg_col <= 0;
+            
+            j <= 0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    // Wait in idle, start processing when index is within bounds
+                    if (index_a < 5'd16) begin
+                        state <= LOAD;
+                    end else begin
+                        done <= 1'b1;  // Done when all vectors processed
+                    end
+                end
+
+                LOAD: begin
+                    // Load the nth value from vector_a and vector_b into counta and countb
+                    counta <= vector_a[index_a*8+:8];
+                    countb <= vector_b[index_b*8+:8];
+                    
+                    state <= COUNT_A;  // Start with counta
+                end
+
+                COUNT_A: begin
+                    // First, decrement or increment counta
+                    if (counta > 0) begin
+                        counta <= counta - 1;
+                    end else if (counta < 0) begin
+                        counta <= counta + 1;
+                    end
+
+                    if (counta > 0) begin
+                      unary_col <= 1;
+                      neg_col <= 0; end
+                  else if  (counta < 0) begin
+                       unary_col <= 0;
+                       neg_col <= 1; end
+                 if (countb > 0)   begin 
+                      unary_row <= 1;
+                      neg_row <= 0; end
+                 else if (countb < 0) begin
+                    unary_row <= 0;
+                    neg_row <= 1; end
+                    // After one decrement/increment of counta, go to countb state
+                    state <= COUNT_B;
+                end
+
+                 COUNT_B: begin
+                // Now decrement or increment countb until it reaches 0
+                if (countb > 0) begin
+                    countb <= countb - 1;
+                    if (xor_out == 0) begin
+             
+                counter <= counter + 1; end 
+             
+             else if (xor_out == 1) begin
+             
+                counter <= counter - 1; end
+                end else if (countb < 0) begin
+                    countb <= countb + 1;
+                    if (xor_out == 0) begin
+             
+                counter <= counter + 1; end 
+             
+             else if (xor_out == 1) begin
+             
+                counter <= counter - 1; end
+                end else begin
+                    // When countb reaches 0, go back to counta if counta > 0
+                    if (counta != 0) begin
+                        state <= COUNT_A;  // Continue with counta
+                        countb <= vector_b[index_b*8+:8];
+                    end else if (counta == 0) begin
+                        done_A <= done_A + 1;
+                        C00[j] <= counter;
+                        done_B <= done_B + 1;
+                        state <= CHANGE;
+                    end
+                end
+            end
+
+            CHANGE: begin
+                j = j+1;
+                counter <= 0;
+                
+                // Both counta and countb are 0, load next values
+                case (done_A)
+                    0: index_a <= 4'd0;
+                    1: index_a <= 4'd0;
+                    2: index_a <= 4'd0;
+                    3: index_a <= 4'd0;
+                    4: index_a <= 4'd4;
+                    5: index_a <= 4'd4;
+                    6: index_a <= 4'd4;
+                    7: index_a <= 4'd4;
+                    8: index_a <= 4'd8;
+                    9: index_a <= 4'd8;
+                    10: index_a <= 4'd8;
+                    11: index_a <= 4'd8;
+                    12: index_a <= 4'd12;
+                    13: index_a <= 4'd12;
+                    14: index_a <= 4'd12;
+                    15: index_a <= 4'd12;
+                endcase
+
+                case (done_B)
+                    0: index_b <= 4'd0;
+                    1: index_b <= 4'd1;
+                    2: index_b <= 4'd2;
+                    3: index_b <= 4'd3;
+                    4: index_b <= 4'd0;
+                    5: index_b <= 4'd1;
+                    6: index_b <= 4'd2;
+                    7: index_b <= 4'd3;
+                    8: index_b <= 4'd0;
+                    9: index_b <= 4'd1;
+                    10: index_b <= 4'd2;
+                    11: index_b <= 4'd3;
+                    12: index_b <= 4'd0;
+                    13: index_b <= 4'd1;
+                    14: index_b <= 4'd2;
+                    15: index_b <= 4'd3;
+                endcase
+
+                state <= LOAD;  // Load next vector values
+            end
+
+        endcase
+    end
+end
+
+            assign xor_out = neg_col ^ neg_row;
+            assign and_out = unary_col && unary_row;
+
+/// second state machine
+    reg signed unary_col_1 ;
+    reg signed unary_row_1 ;
+    reg signed neg_row_1;
+    reg signed neg_col_1 ;
+    wire signed xor_out_1 ;
+    wire signed and_out_1 ;
+    reg signed [7:0] counta_1, countb_1;   // 8-bit counters
+    reg [4:0] index_a_1;            // Index for vector selection
+    reg [4:0] index_b_1;
+    reg [3:0] done_A_1;
+    reg [3:0] done_B_1;
+    reg [2:0] state_1;            // State variable
+     reg done_1;
+     reg signed [7:0] C00_1 [0:15];
+     reg signed [7:0] counter_1;
+    localparam IDLE_1     = 3'b00,  // IDLE state
+               LOAD_1     = 3'b01,  // Load state for vector values
+               COUNT_A_1  = 3'b10,  // Decrement/Increment counta state
+               COUNT_B_1  = 3'b11,  // Decrement/Increment countb state
+               CHANGE_1   = 3'b100;
+
+
+
+always @(posedge clk) begin
+        if (rst) begin
+            counta_1 <= 8'd0;
+            countb_1 <= 8'd0;
+            index_a_1 <= 5'd1;
+            index_b_1 <= 5'd4;
+            done_A_1 <= 0;
+            done_B_1 <= 0;
+            counter_1 <= 0;
+            unary_col_1 <= 0;
+            unary_row_1 <= 0;
+            neg_row_1 <= 0;
+            neg_col_1 <= 0;
+            
+            i <= 0;
+            state_1 <= IDLE_1;
+            //done_1 <= 1'b0;
+        end else begin
+            case (state_1)
+                IDLE_1: begin
+                    // Wait in idle, start processing when index is within bounds
+                    if (index_a_1 < 5'd16) begin
+                        state_1 <= LOAD_1;
+                    end else begin
+                       // done_1 <= 1'b1;  // Done when all vectors processed
+                    end
+                end
+
+                LOAD_1: begin
+                    // Load the nth value from vector_a and vector_b into counta and countb
+                    counta_1 <= vector_a[index_a_1*8+:8];
+                    countb_1 <= vector_b[index_b_1*8+:8];
+                    state_1 <= COUNT_A_1;  // Start with counta
+                end
+
+                COUNT_A_1: begin
+                    // First, decrement or increment counta
+                    if (counta_1 > 0) begin
+                        counta_1 <= counta_1 - 1;
+                    end else if (counta_1 < 0) begin
+                        counta_1 <= counta_1 + 1;
+                    end
+
+                    if (counta_1 > 0) begin
+                      unary_col_1 <= 1;
+                      neg_col_1 <= 0; end
+                  else if  (counta_1 < 0) begin
+                       unary_col_1 <= 0;
+                       neg_col_1 <= 1; end
+                 if (countb_1 > 0)   begin 
+                      unary_row_1 <= 1;
+                      neg_row_1 <= 0; end
+                 else if (countb_1 < 0) begin
+                    unary_row_1 <= 0;
+                    neg_row_1 <= 1; end
+                    
+                    // After one decrement/increment of counta, go to countb state
+                    state_1 <= COUNT_B_1;
+                end
+
+                 COUNT_B_1: begin
+                // Now decrement or increment countb until it reaches 0
+                if (countb_1 > 0) begin
+                    countb_1 <= countb_1 - 1;
+                    if (xor_out_1 == 0) begin
+             
+                counter_1 <= counter_1 + 1; end 
+             
+             else if (xor_out_1 == 1) begin
+             
+                counter_1 <= counter_1 - 1; end
+                end else if (countb_1 < 0) begin
+                    countb_1 <= countb_1 + 1;
+                    if (xor_out_1 == 0) begin
+             
+                counter_1 <= counter_1 + 1; end 
+             
+             else if (xor_out_1 == 1) begin
+             
+                counter_1 <= counter_1 - 1; end
+                end else begin
+                    // When countb reaches 0, go back to counta if counta > 0
+                    if (counta_1 != 0) begin
+                        state_1 <= COUNT_A_1;  // Continue with counta
+                        countb_1 <= vector_b[index_b_1*8+:8];
+                    end else if (counta_1 == 0) begin
+                        done_A_1 <= done_A_1 + 1;
+                        C00_1[i] <= counter_1;
+                        done_B_1 <= done_B_1 + 1;
+                        state_1 <= CHANGE_1;
+                    end
+                end
+            end
+
+            CHANGE_1: begin
+            
+                i = i+1;
+                counter_1 <= 0;
+                // Both counta and countb are 0, load next values
+                case (done_A_1)
+                    0: index_a_1 <= 4'd0;
+                    1: index_a_1 <= 4'd1;
+                    2: index_a_1 <= 4'd1;
+                    3: index_a_1 <= 4'd1;
+                    4: index_a_1 <= 4'd5;
+                    5: index_a_1 <= 4'd5;
+                    6: index_a_1 <= 4'd5;
+                    7: index_a_1 <= 4'd5;
+                    8: index_a_1 <= 4'd9;
+                    9: index_a_1 <= 4'd9;
+                    10: index_a_1 <= 4'd9;
+                    11: index_a_1 <= 4'd9;
+                    12: index_a_1 <= 4'd13;
+                    13: index_a_1 <= 4'd13;
+                    14: index_a_1 <= 4'd13;
+                    15: index_a_1 <= 4'd13;
+                endcase
+
+                case (done_B_1)
+                    0: index_b_1 <= 4'd0;
+                    1: index_b_1 <= 4'd5;
+                    2: index_b_1 <= 4'd6;
+                    3: index_b_1 <= 4'd7;
+                    4: index_b_1 <= 4'd4;
+                    5: index_b_1 <= 4'd5;
+                    6: index_b_1 <= 4'd6;
+                    7: index_b_1 <= 4'd7;
+                    8: index_b_1 <= 4'd4;
+                    9: index_b_1 <= 4'd5;
+                    10: index_b_1 <= 4'd6;
+                    11: index_b_1 <= 4'd7;
+                    12: index_b_1 <= 4'd4;
+                    13: index_b_1 <= 4'd5;
+                    14: index_b_1 <= 4'd6;
+                    15: index_b_1 <= 4'd7;
+                endcase
+
+                state_1 <= LOAD_1;  // Load next vector values
+            end
+
+        endcase
+    end
+end
+
+
+            assign xor_out_1 = neg_col_1 ^ neg_row_1;
+            assign and_out_1 = unary_col_1 && unary_row_1;
+
+/// third state machine
+    reg signed unary_col_2 ;
+    reg signed unary_row_2 ;
+    reg signed neg_row_2;
+    reg signed neg_col_2 ;
+    wire signed xor_out_2 ;
+    wire signed and_out_2 ;
+    reg signed [7:0] counta_2, countb_2;   // 8-bit counters
+    reg [4:0] index_a_2;            // Index for vector selection
+    reg [4:0] index_b_2;
+    reg [3:0] done_A_2;
+    reg [3:0] done_B_2;
+    reg [2:0] state_2;            // State variable
+  //   reg done_1;
+     reg signed [7:0] C00_2 [0:15];
+     reg signed [7:0] counter_2;
+    localparam IDLE_2     = 3'b00,  // IDLE state
+               LOAD_2     = 3'b01,  // Load state for vector values
+               COUNT_A_2  = 3'b10,  // Decrement/Increment counta state
+               COUNT_B_2  = 3'b11,  // Decrement/Increment countb state
+               CHANGE_2   = 3'b100;
+
+
+
+always @(posedge clk) begin
+        if (rst) begin
+            counta_2 <= 8'd0;
+            countb_2 <= 8'd0;
+            index_a_2 <= 5'd2;
+            index_b_2 <= 5'd8;
+            done_A_2 <= 0;
+            done_B_2 <= 0;
+            counter_2 <= 0;
+            unary_col_2 <= 0;
+            unary_row_2 <= 0;
+            neg_row_2 <= 0;
+            neg_col_2 <= 0;
+            
+            k <= 0;
+            state_2 <= IDLE_2;
+            //done_1 <= 1'b0;
+        end else begin
+            case (state_2)
+                IDLE_2: begin
+                    // Wait in idle, start processing when index is within bounds
+                    if (index_a_2 < 5'd16) begin
+                        state_2 <= LOAD_2;
+                    end else begin
+                       // done_1 <= 1'b1;  // Done when all vectors processed
+                    end
+                end
+
+                LOAD_2: begin
+                    // Load the nth value from vector_a and vector_b into counta and countb
+                    counta_2 <= vector_a[index_a_2*8+:8];
+                    countb_2 <= vector_b[index_b_2*8+:8];
+                    state_2 <= COUNT_A_2;  // Start with counta
+                end
+
+                COUNT_A_2: begin
+                    // First, decrement or increment counta
+                    if (counta_2 > 0) begin
+                        counta_2 <= counta_2 - 1;
+                    end else if (counta_2 < 0) begin
+                        counta_2 <= counta_2 + 1;
+                    end
+
+                    if (counta_2 > 0) begin
+                      unary_col_2 <= 1;
+                      neg_col_2 <= 0; end
+                  else if  (counta_2 < 0) begin
+                       unary_col_2 <= 0;
+                       neg_col_2 <= 1; end
+                 if (countb_2 > 0)   begin 
+                      unary_row_2 <= 1;
+                      neg_row_2 <= 0; end
+                 else if (countb_2 < 0) begin
+                    unary_row_2 <= 0;
+                    neg_row_2 <= 1; end
+
+                    // After one decrement/increment of counta, go to countb state
+                    state_2 <= COUNT_B_2;
+                end
+
+                 COUNT_B_2: begin
+                // Now decrement or increment countb until it reaches 0
+                if (countb_2 > 0) begin
+                    countb_2 <= countb_2 - 1;
+                     if (xor_out_2 == 0) begin
+             
+                counter_2 <= counter_2 + 1; end 
+             
+             else if (xor_out_2 == 1) begin
+             
+                counter_2 <= counter_2 - 1; end
+                
+                end else if (countb_2 < 0) begin
+                    countb_2 <= countb_2 + 1;
+                     if (xor_out_2 == 0) begin
+             
+                counter_2 <= counter_2 + 1; end 
+             
+             else if (xor_out_2 == 1) begin
+             
+                counter_2 <= counter_2 - 1; end
+                end else begin
+                    // When countb reaches 0, go back to counta if counta > 0
+                    if (counta_2 != 0) begin
+                        state_2 <= COUNT_A_2;  // Continue with counta
+                        countb_2 <= vector_b[index_b_2*8+:8];
+                    end else if (counta_2 == 0) begin
+                        done_A_2 <= done_A_2 + 1;
+                        C00_2[k] <= counter_2;
+                        done_B_2 <= done_B_2 + 1;
+                        state_2 <= CHANGE_2;
+                    end
+                end
+            end
+
+            CHANGE_2: begin
+            
+                k = k+1;
+                counter_2 <= 0;
+                // Both counta and countb are 0, load next values
+                case (done_A_2)
+                    0: index_a_2 <= 4'd0;
+                    1: index_a_2 <= 4'd2;
+                    2: index_a_2 <= 4'd2;
+                    3: index_a_2 <= 4'd2;
+                    4: index_a_2 <= 4'd6;
+                    5: index_a_2 <= 4'd6;
+                    6: index_a_2 <= 4'd6;
+                    7: index_a_2 <= 4'd6;
+                    8: index_a_2 <= 4'd10;
+                    9: index_a_2 <= 4'd10;
+                    10: index_a_2 <= 4'd10;
+                    11: index_a_2 <= 4'd10;
+                    12: index_a_2 <= 4'd14;
+                    13: index_a_2 <= 4'd14;
+                    14: index_a_2 <= 4'd14;
+                    15: index_a_2 <= 4'd14;
+                endcase
+
+                case (done_B_2)
+                    0: index_b_2 <= 4'd0;
+                    1: index_b_2 <= 4'd9;
+                    2: index_b_2 <= 4'd10;
+                    3: index_b_2 <= 4'd11;
+                    4: index_b_2 <= 4'd8;
+                    5: index_b_2 <= 4'd9;
+                    6: index_b_2 <= 4'd10;
+                    7: index_b_2 <= 4'd11;
+                    8: index_b_2 <= 4'd8;
+                    9: index_b_2 <= 4'd9;
+                    10: index_b_2 <= 4'd10;
+                    11: index_b_2 <= 4'd11;
+                    12: index_b_2 <= 4'd8;
+                    13: index_b_2 <= 4'd9;
+                    14: index_b_2 <= 4'd10;
+                    15: index_b_2 <= 4'd11;
+                endcase
+
+                state_2 <= LOAD_2;  // Load next vector values
+            end
+
+        endcase
+    end
+end
+
+            assign xor_out_2 = neg_col_2 ^ neg_row_2;
+            assign and_out_2 = unary_col_2 && unary_row_2;
+
+
+/// FOURTH state machine
+    reg signed unary_col_3 ;
+    reg signed unary_row_3 ;
+    reg signed neg_row_3;
+    reg signed neg_col_3 ;
+    wire signed xor_out_3 ;
+    wire signed and_out_3 ;
+    reg signed [7:0] counta_3, countb_3;   // 8-bit counters
+    reg [4:0] index_a_3;            // Index for vector selection
+    reg [4:0] index_b_3;
+    reg [3:0] done_A_3;
+    reg [3:0] done_B_3;
+    reg [2:0] state_3;            // State variable
+  //   reg done_1;
+     reg signed [7:0] C00_3 [0:15];
+     reg signed [7:0] counter_3;
+    localparam IDLE_3     = 3'b00,  // IDLE state
+               LOAD_3     = 3'b01,  // Load state for vector values
+               COUNT_A_3  = 3'b10,  // Decrement/Increment counta state
+               COUNT_B_3  = 3'b11,  // Decrement/Increment countb state
+               CHANGE_3   = 3'b100;
+
+
+
+always @(posedge clk) begin
+        if (rst) begin
+            counta_3 <= 8'd0;
+            countb_3 <= 8'd0;
+            index_a_3 <= 5'd3;
+            index_b_3 <= 5'd12;
+            done_A_3 <= 0;
+            done_B_3 <= 0;
+            counter_3 <= 0;
+            unary_col_3 <= 0;
+            unary_row_3 <= 0;
+            neg_row_3 <= 0;
+            neg_col_3 <= 0;
+            
+            l <= 0;
+            state_3 <= IDLE_3;
+            //done_1 <= 1'b0;
+        end else begin
+            case (state_3)
+                IDLE_3: begin
+                    // Wait in idle, start processing when index is within bounds
+                    if (index_a_3 < 5'd16) begin
+                        state_3 <= LOAD_3;
+                    end else begin
+                       // done_1 <= 1'b1;  // Done when all vectors processed
+                    end
+                end
+
+                LOAD_3: begin
+                    // Load the nth value from vector_a and vector_b into counta and countb
+                    counta_3 <= vector_a[index_a_3*8+:8];
+                    countb_3 <= vector_b[index_b_3*8+:8];
+                    
+                
+                    state_3 <= COUNT_A_3;  // Start with counta
+                end
+
+                COUNT_A_3: begin
+                    // First, decrement or increment counta
+                    if (counta_3 > 0) begin
+                        counta_3 <= counta_3 - 1;
+                    end else if (counta_3 < 0) begin
+                        counta_3 <= counta_3 + 1;
+                    end
+
+                    if (counta_3 > 0) begin
+                      unary_col_3 <= 1;
+                      neg_col_3 <= 0; end
+                  else if  (counta_3 < 0) begin
+                       unary_col_3 <= 0;
+                       neg_col_3 <= 1; end
+                 if (countb_3 > 0)   begin 
+                      unary_row_3 <= 1;
+                      neg_row_3 <= 0; end
+                 else if (countb_3 < 0) begin
+                    unary_row_3 <= 0;
+                    neg_row_3 <= 1; end
+
+                    // After one decrement/increment of counta, go to countb state
+                    state_3 <= COUNT_B_3;
+                end
+
+                 COUNT_B_3: begin
+                // Now decrement or increment countb until it reaches 0
+                if (countb_3 > 0) begin
+                    countb_3 <= countb_3 - 1;
+                    if (xor_out_3 == 0) begin
+             
+                counter_3 <= counter_3 + 1; end 
+             
+             else if (xor_out_3 == 1) begin
+             
+                counter_3 <= counter_3 - 1; end
+                end else if (countb_3 < 0) begin
+                    countb_3 <= countb_3 + 1;
+                    if (xor_out_3 == 0) begin
+             
+                counter_3 <= counter_3 + 1; end 
+             
+             else if (xor_out_3 == 1) begin
+             
+                counter_3 <= counter_3 - 1; end
+                end else begin
+                    // When countb reaches 0, go back to counta if counta > 0
+                    if (counta_3 != 0) begin
+                        state_3 <= COUNT_A_3;  // Continue with counta
+                        countb_3 <= vector_b[index_b_3*8+:8];
+                    end else if (counta_3 == 0) begin
+                        done_A_3 <= done_A_3 + 1;
+                        C00_3[l] <= counter_3;
+                        done_B_3 <= done_B_3 + 1;
+                        state_3 <= CHANGE_3;
+                    end
+                end
+            end
+
+            CHANGE_3: begin
+            
+                l = l+1;
+                counter_3 <= 0;
+                // Both counta and countb are 0, load next values
+                case (done_A_3)
+                    0: index_a_3 <= 4'd0;
+                    1: index_a_3 <= 4'd3;
+                    2: index_a_3 <= 4'd3;
+                    3: index_a_3 <= 4'd3;
+                    4: index_a_3 <= 4'd7;
+                    5: index_a_3 <= 4'd7;
+                    6: index_a_3 <= 4'd7;
+                    7: index_a_3 <= 4'd7;
+                    8: index_a_3 <= 4'd11;
+                    9: index_a_3 <= 4'd11;
+                    10: index_a_3 <= 4'd11;
+                    11: index_a_3 <= 4'd11;
+                    12: index_a_3 <= 4'd15;
+                    13: index_a_3 <= 4'd15;
+                    14: index_a_3 <= 4'd15;
+                    15: index_a_3 <= 4'd15;
+                endcase
+
+                case (done_B_3)
+                    0: index_b_3 <= 4'd0;
+                    1: index_b_3 <= 4'd13;
+                    2: index_b_3 <= 4'd14;
+                    3: index_b_3 <= 4'd15;
+                    4: index_b_3 <= 4'd12;
+                    5: index_b_3 <= 4'd13;
+                    6: index_b_3 <= 4'd14;
+                    7: index_b_3 <= 4'd15;
+                    8: index_b_3 <= 4'd12;
+                    9: index_b_3 <= 4'd13;
+                    10: index_b_3 <= 4'd14;
+                    11: index_b_3 <= 4'd15;
+                    12: index_b_3 <= 4'd12;
+                    13: index_b_3 <= 4'd13;
+                    14: index_b_3 <= 4'd14;
+                    15: index_b_3 <= 4'd15;
+                endcase
+
+                state_3 <= LOAD_3;  // Load next vector values
+            end
+
+        endcase
+    end
+end
+
+
+            assign xor_out_3 = neg_col_3 ^ neg_row_3;
+            assign and_out_3 = unary_col_3 && unary_row_3;
+
+
+
+
+
+
+
+
+
+reg done_1_reg;
+always@(posedge clk)
+begin
+if(rst)
+done_1_reg <= 0; else
+    if(done_A_3 == 2'd3 && countb_3 )
+    done_1_reg = 1;
+end
+
+always@(posedge clk)
+begin
+if(rst)
+ done_1 <= 0; else
+    if(done_1_reg && done_A_1 == 4'd15 && counta_1 == 0 && countb_1 == 0 )
+    done_1 = 1;
+end
+
+always@(posedge clk)
+begin
+    if(done_1)
+    begin
+        Row_00 <= C00[0] + C00_1[0] + C00_2[0] + C00_3[0];
+        Row_01 <= C00[1] + C00_1[1] + C00_2[1] + C00_3[1];
+        Row_02 <= C00[2] + C00_1[2] + C00_2[2] + C00_3[2];
+        Row_03 <= C00[3] + C00_1[3] + C00_2[3] + C00_3[3];
+        Row_10 <= C00[4] + C00_1[4] + C00_2[4] + C00_3[4];
+        Row_11 <= C00[5] + C00_1[5] + C00_2[5] + C00_3[5];
+        Row_12 <= C00[6] + C00_1[6] + C00_2[6] + C00_3[6];
+        Row_13 <= C00[7] + C00_1[7] + C00_2[7] + C00_3[7];
+        Row_20 <= C00[8] + C00_1[8] + C00_2[8] + C00_3[8];
+        Row_21 <= C00[9] + C00_1[9] + C00_2[9] + C00_3[9];
+        Row_22 <= C00[10] + C00_1[10] + C00_2[10] + C00_3[10];
+        Row_23 <= C00[11] + C00_1[11] + C00_2[11] + C00_3[11];
+        Row_30 <= C00[12] + C00_1[12] + C00_2[12] + C00_3[12];
+        Row_31 <= C00[13] + C00_1[13] + C00_2[13] + C00_3[13];
+        Row_32 <= C00[14] + C00_1[14] + C00_2[14] + C00_3[14];
+        Row_33 <= C00[15] + C00_1[15] + C00_2[15] + C00_3[15];
+        
+    end
+end
+
+endmodule
